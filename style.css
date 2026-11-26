@@ -1,0 +1,425 @@
+:root {
+  /* 무드보드 '맑은 하늘'에서 뽑은 색 */
+  --sky-top: #1A81BD;
+  --sky-mid: #4799CC;
+  --sky-low: #9CCBEA;
+  --haze: #DCEBF4;
+  --ink: #0E2F47;
+  --muted: #4E6C80;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* 시간대에 따라 scene.js가 바꾸는 값 */
+  --scrim: 26 129 189;
+  --scrim-deep: 15 111 173;
+  --sunglow: 1;
+  --view-ink: var(--ink);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'SUIT', system-ui, sans-serif;
+  color: #fff;
+  /* 한낮의 맑은 하늘: 위는 깊고, 아래로 갈수록 옅어져 지평선의 옅은 안개로 */
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 46%, var(--sky-low) 80%, var(--haze) 100%);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 하늘의 빛: 오른쪽 위의 해 기운과 아주 옅은 구름이 천천히 흐름 */
+body::before {
+  content: "";
+  position: fixed; inset: -12%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(34% 30% at 86% 6%, rgba(255, 252, 240, 0.55) 0%, rgba(255, 252, 240, 0) 70%),
+    radial-gradient(22% 9% at 18% 22%, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(30% 8% at 62% 34%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(46% 14% at 30% 88%, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 100%);
+  opacity: var(--sunglow);
+  will-change: transform;
+  animation: drift 48s ease-in-out infinite alternate;
+}
+@keyframes drift {
+  from { transform: translate3d(-2.5%, 0, 0); }
+  to { transform: translate3d(2.5%, -1.2%, 0); }
+}
+
+/* 해외: 고도가 높은 하늘처럼 조금 더 깊은 파랑 */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(180deg, rgb(var(--scrim-deep)) 0%, rgb(var(--scrim) / 0.4) 45%, rgb(var(--scrim) / 0) 75%);
+  opacity: 0; transition: opacity 1.8s var(--ease);
+}
+.is-overseas::after { opacity: 1; }
+
+/* 필름 입자와 색 보정은 WebGL 필름 필터(scene.js의 film)에서 처리 */
+
+#stage { position: fixed; inset: 0; min-height: 100dvh; }
+#stage canvas { display: block; width: 100%; height: 100%; }
+
+
+/* 시점 이동 중 장면이 메뉴 뒤로 지나가도 메뉴가 읽히도록 위쪽을 하늘색으로 덮음 */
+.nav::before {
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; height: 128px; pointer-events: none;
+  background: linear-gradient(180deg, rgb(var(--scrim)) 0%, rgb(var(--scrim) / 0.8) 50%, rgb(var(--scrim) / 0) 100%);
+  opacity: 0.72; transition: opacity 0.6s var(--ease); /* 흰 지붕이 메뉴 뒤로 올라와도 흰 글자가 읽히도록 하늘이 살짝 덮음 */
+}
+.is-overseas .nav::before { background: linear-gradient(180deg, rgb(var(--scrim-deep)) 0%, rgb(var(--scrim-deep) / 0.8) 50%, rgb(var(--scrim-deep) / 0) 100%); }
+.is-pov .nav::before { opacity: 1; }
+
+/* 시점 버튼: 돌아가기는 승강장 시점에서만, 들어가기는 키보드 포커스 때만 보임 */
+/* 배경 없이 글자만. 바닥이 밝은 시점 화면 위에 놓이므로 짙은 글자색으로 읽힘 */
+.view-btn {
+  position: fixed; z-index: 10; left: 48px; bottom: 40px;
+  font: inherit; font-size: 15px; font-weight: 600; color: var(--view-ink); /* 밤에는 밝은 글자 */
+  background: none; border: 0; padding: 10px 0; cursor: pointer; /* 위아래 여백은 누르기 쉬운 영역 */
+  opacity: 0; pointer-events: none; transform: translateY(8px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+/* 호버 밑줄: 왼쪽에서 오른쪽으로 그어짐 */
+.view-btn::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 7px; height: 1.5px;
+  background: currentColor; transform: scaleX(0); transform-origin: left center;
+  transition: transform 0.35s var(--ease);
+}
+.view-btn:hover::after { transform: scaleX(1); }
+.view-btn:active { transform: translateY(1px); }
+.is-seat .view-btn { color: #fff; text-shadow: 0 1px 10px rgba(6, 26, 46, 0.55); } /* 좌석에서는 어두운 객실 위라 밝은 글자 */
+.is-pov .view-btn--leave { opacity: 1; pointer-events: auto; transform: none; transition-delay: 1.8s, 1.8s, 0s; }
+.is-settled:not(.is-pov) .view-btn--enter:focus-visible { opacity: 1; pointer-events: auto; transform: none; }
+
+/* nav: 장면이 다 그려질 즈음 나타남 */
+.nav {
+  position: fixed; z-index: 10; top: 0; left: 0; right: 0;
+  height: 72px; padding: 0 48px;
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  opacity: 0; transform: translateY(-8px); pointer-events: none;
+  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+}
+.is-ready .nav { opacity: 1; transform: none; pointer-events: auto; }
+.is-ready.is-atlas .nav { pointer-events: none; } /* 지도 화면: 가운데 제목을 누를 수 있게 메뉴 빈 곳은 통과 */
+.is-ready.is-atlas .nav > * { pointer-events: auto; }
+
+.logo { display: inline-flex; align-items: center; justify-self: start; }
+.logo img { display: block; height: 26px; width: auto; filter: brightness(0) invert(1); } /* 하늘 위에서는 흰 로고 */
+
+/* 국내/해외 다이얼: 양옆 글자 사이의 둥근 손잡이가 고른 쪽을 가리키도록 돌아감 */
+.mode { justify-self: end; display: flex; align-items: center; gap: 14px; }
+.mode-opt {
+  font: inherit; font-size: 15px; font-weight: 600; color: rgba(255, 255, 255, 0.55);
+  background: none; border: 0; padding: 8px 2px; cursor: pointer; transition: color 0.4s var(--ease);
+}
+.mode-opt:hover:not(.is-on) { color: rgba(255, 255, 255, 0.85); }
+.mode-opt.is-on { color: #fff; }
+.dial {
+  position: relative; width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+  background: radial-gradient(circle at 34% 28%, #FFFFFF 0%, #F1F6F9 48%, #D5E3EC 100%); /* 위에서 빛을 받은 둥근 손잡이 */
+  box-shadow: 0 8px 18px -8px rgba(8, 52, 90, 0.7), inset 0 -2px 3px rgba(12, 79, 128, 0.14), inset 0 1px 1px #fff;
+  transform: rotate(-90deg); /* 국내: 왼쪽을 가리킴 */
+  transition: transform 0.7s cubic-bezier(0.34, 1.36, 0.5, 1), box-shadow 0.3s var(--ease);
+}
+.is-overseas .dial { transform: rotate(90deg); } /* 해외: 오른쪽을 가리킴 */
+.dial:hover { box-shadow: 0 10px 22px -8px rgba(8, 52, 90, 0.8), inset 0 -2px 3px rgba(12, 79, 128, 0.14), inset 0 1px 1px #fff; }
+.dial-pointer { position: absolute; left: 50%; top: 5px; width: 3px; height: 10px; margin-left: -1.5px; border-radius: 2px; background: var(--ink); }
+
+a:focus-visible, button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.view-btn:focus-visible { outline-color: var(--view-ink); }
+
+@media (max-width: 860px) {
+  .nav { padding: 0 16px; }
+  .view-btn { left: 16px; bottom: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav { transition: none; }
+  body::before { animation: none; }
+  .view-btn::after { transition: none; }
+  .dial, .mode-opt { transition: none; }
+}
+
+/* ---------- 입체 지도 ---------- */
+/* 종이 지도가 화면을 채운 뒤 잠깐 덮이는 종이색 */
+.atlas-veil { position: fixed; inset: 0; z-index: 8; background: #EFEBF2; opacity: 0; pointer-events: none; transition: opacity 260ms ease; }
+.atlas-veil.is-on { opacity: 1; }
+.atlas-ui { position: fixed; inset: 0; z-index: 9; pointer-events: none; opacity: 0; transition: opacity 0.6s var(--ease) 0.25s; }
+.is-atlas .atlas-ui { opacity: 1; }
+/* 왼쪽 위: 지금 보는 곳과 취향. 하늘 위라 흰 글자 */
+.atlas-head { position: absolute; left: 48px; top: 104px; pointer-events: auto; max-width: 520px; display: flex; flex-direction: column; }
+.atlas-head .atlas-sub { order: 2; } /* 안내문은 버튼 아래 */
+.atlas-head .atlas-recs { order: 3; }
+/* 제목: 헤더 가운데, 로고·다이얼과 같은 줄 */
+.atlas-crumb {
+  position: fixed; left: 50%; top: 0; height: 72px; translate: -50% 0; pointer-events: auto;
+  display: flex; align-items: center; gap: 10px; white-space: nowrap;
+  font-size: 20px; font-weight: 600; letter-spacing: 0.04em; line-height: 1; color: var(--ink);
+}
+.atlas-crumb-home { font: inherit; letter-spacing: inherit; font-weight: 500; color: rgba(14, 47, 71, 0.45); background: none; border: 0; padding: 0; cursor: pointer; transition: color 0.3s var(--ease); }
+.atlas-crumb-home:hover { color: var(--ink); }
+.atlas-crumb-sep { font-weight: 400; color: rgba(14, 47, 71, 0.3); }
+.atlas-sub { margin-top: 14px; font-size: 14px; font-weight: 500; color: var(--muted); }
+.atlas-sub:empty { display: none; }
+.atlas-filters { position: relative; display: flex; flex-wrap: wrap; gap: 4px; padding-top: 18px; --glow: #3AA8F0; } /* 위에 위치 표시가 설 자리 */
+.atlas-night .atlas-filters { --glow: #FF6B57; } /* 밤에는 코랄 빛 */
+/* 취향 버튼: 바탕 없이 글자만. 고르면 글자가 빛나고 밑줄이 그어짐 */
+.atlas-filter {
+  position: relative; font: inherit; font-size: 14px; font-weight: 600; color: var(--muted);
+  height: 34px; padding: 0 12px; border: 0; background: none; cursor: pointer;
+  transition: color 0.35s var(--ease), text-shadow 0.45s var(--ease);
+}
+.atlas-filter::after { /* 밑줄: 전국 보기 버튼과 같은 움직임 (왼쪽에서 오른쪽으로 그어짐) */
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: 4px; height: 1.5px;
+  background: var(--glow); box-shadow: 0 0 4px color-mix(in srgb, var(--glow) 50%, transparent);
+  transform: scaleX(0); transform-origin: left center; transition: transform 0.35s var(--ease);
+}
+.atlas-filter:hover { color: var(--ink); }
+.atlas-filter[aria-checked="true"] { color: var(--glow); text-shadow: 0 0 6px color-mix(in srgb, var(--glow) 50%, transparent), 0 0 14px color-mix(in srgb, var(--glow) 25%, transparent); } /* 빛은 은은하게 */
+.atlas-filter[aria-checked="true"]::after { transform: scaleX(1); }
+/* 위치 핀: 고른 버튼 위로 옮겨 감. 끝(아래 꼭지)을 잡고 끌려가듯, 몸통이 움직이는 반대쪽으로 기울었다가 도착하면 흔들리며 바로 섬 */
+.atlas-filter-pin {
+  position: absolute; left: 0; top: 0; width: 12px; height: 12px; pointer-events: none;
+  transform-origin: 50% 120%; will-change: transform; /* 위치·기울기는 atlas.js가 프레임 단위로 계산해 재생 (아래 꼭지를 축으로 기움) */
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--glow) 60%, transparent));
+}
+.atlas-filter-pin::before { /* 핀 몸통: 한 모서리만 뾰족한 원을 돌려 아래를 가리키게 */
+  content: ""; position: absolute; inset: 0; background: var(--glow); border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+}
+.atlas-filter:active { translate: 0 1px; }
+/* 지도 위 이름표: 화면 좌표로 옮겨 다님 */
+.atlas-labels { position: absolute; inset: 0; overflow: hidden; }
+.atlas-label, .atlas-lead {
+  position: absolute; left: 0; top: 0; opacity: 0; transition: opacity 0.4s var(--ease);
+  color: var(--ink); white-space: nowrap;
+}
+.atlas-label.is-on, .atlas-lead.is-on { opacity: 1; }
+/* 지시선: 점에서 가는 선이 오른쪽으로 나가고 끝에 글자 (참고 지도의 산 이름 표기처럼) */
+.atlas-lead { display: flex; align-items: center; pointer-events: none; margin-top: -1px; }
+.atlas-lead-dot { width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: currentColor; }
+.atlas-lead-line { width: 56px; height: 1px; background: currentColor; opacity: 0.55; margin-right: 8px; }
+.atlas-lead-text { display: flex; align-items: baseline; gap: 6px; }
+.atlas-lead-name { font-size: 13px; font-weight: 600; letter-spacing: 0.14em; }
+.atlas-lead-note { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; opacity: 0.6; }
+.atlas-lead--peak { color: rgba(14, 47, 71, 0.72); }
+.atlas-lead--peak .atlas-lead-line { width: 34px; }
+.atlas-lead--peak .atlas-lead-name { font-size: 11px; font-weight: 500; }
+.atlas-lead--region.is-hover .atlas-lead-line, .atlas-lead--region.is-hover .atlas-lead-dot { opacity: 1; }
+.atlas-lead--region.is-hover .atlas-lead-name { font-weight: 700; }
+.atlas-lead--region.is-left { flex-direction: row-reverse; } /* 서쪽 지역은 왼쪽으로 선이 나감 */
+.atlas-lead--region.is-left .atlas-lead-dot { margin: 0 -2px 0 0; }
+.atlas-lead--region.is-left .atlas-lead-line { margin: 0 0 0 8px; }
+.atlas-lead--region.is-left { translate: -100% 0; }
+.atlas-lead--region .atlas-lead-line { opacity: 0.35; }
+.atlas-lead--region .atlas-lead-dot { opacity: 0.6; }
+.atlas-label--place {
+  font: inherit; font-size: 14px; font-weight: 700; background: none; border: 0; padding: 4px 6px; cursor: pointer;
+  transform-origin: 0 0; margin: -30px 0 0 0; translate: -50% 0;
+}
+.atlas-label--place.is-on { pointer-events: auto; }
+.atlas-label--place:hover, .atlas-label--place.is-sel { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
+.atlas-label--place.is-in { color: var(--atlas-hot); }
+.atlas-label--place { font-size: 13px; letter-spacing: 0.06em; text-shadow: 0 0 6px #EFEBF2, 0 0 2px #EFEBF2; }
+/* 장소 설명: 왼쪽 아래, 고른 장소가 있을 때만 */
+.atlas-place {
+  position: absolute; left: 48px; bottom: 100px; width: min(380px, calc(100vw - 32px)); padding: 26px 26px 24px;
+  background: #F6F7F3; color: var(--ink); border-radius: 20px; pointer-events: auto;
+  box-shadow: 0 30px 60px -30px rgba(8, 52, 90, 0.55), 0 2px 6px rgba(8, 52, 90, 0.08);
+  opacity: 0; transform: translateY(12px); visibility: hidden;
+  transition: opacity 0.35s var(--ease), transform 0.45s var(--ease), visibility 0s linear 0.45s;
+}
+.atlas-place.is-open { opacity: 1; transform: none; visibility: visible; transition-delay: 0s; }
+.atlas-place-close { position: absolute; right: 18px; top: 16px; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); background: none; border: 0; padding: 6px; cursor: pointer; }
+.atlas-place-close:hover { color: var(--ink); }
+.atlas-place-region { font-size: 13px; font-weight: 600; color: var(--muted); }
+.atlas-place-name { margin-top: 6px; font-size: 30px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+.atlas-place-line { margin-top: 12px; font-size: 16px; line-height: 1.6; max-width: 32ch; }
+.atlas-place-meta { margin-top: 10px; font-size: 14px; color: var(--muted); }
+.atlas-place-add {
+  margin-top: 22px; letter-spacing: 0.02em; height: 46px; padding: 0 24px; border: 0; border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: 15px; font-weight: 700; color: #fff; background: var(--ink);
+  transition: background-color 0.3s var(--ease), color 0.3s var(--ease), transform 0.15s var(--ease);
+}
+.atlas-place-add:hover { background: #17486B; }
+.atlas-place-add:active { transform: translateY(1px) scale(0.99); }
+.atlas-place-add.is-in { background: rgba(14, 47, 71, 0.08); color: var(--ink); }
+.atlas-place-add.is-in:hover { background: rgba(14, 47, 71, 0.14); }
+.atlas-ui button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.atlas-place button:focus-visible { outline-color: var(--ink); }
+/* 장소: 땅 위의 점, 점에서 위로 뻗은 가는 선, 그 끝의 이름 (전국에서는 점만) */
+.atlas-pin {
+  position: absolute; left: 0; top: 0; width: 0; height: 0; padding: 0; border: 0; background: none; font: inherit;
+  color: var(--ink); cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.35s var(--ease);
+}
+.atlas-pin.is-on { opacity: 1; pointer-events: auto; }
+.atlas-pin-dot { position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 2px rgba(239, 235, 242, 0.9); }
+.atlas-pin-line { position: absolute; left: -0.5px; bottom: 0; width: 1px; height: var(--l, 30px); background: currentColor; opacity: 0.55; transition: height 0.3s var(--ease); }
+.atlas-pin-text {
+  position: absolute; left: 0; bottom: calc(var(--l, 30px) + 6px); translate: -50% 0; white-space: nowrap;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.06em; padding: 2px 4px;
+  text-shadow: 0 0 6px #EFEBF2, 0 0 2px #EFEBF2; transition: bottom 0.3s var(--ease);
+}
+.atlas-pin.is-dot .atlas-pin-line, .atlas-pin.is-dot .atlas-pin-text { display: none; }
+.atlas-pin.is-dot .atlas-pin-dot { width: 5px; height: 5px; left: -2.5px; top: -2.5px; }
+.atlas-pin:hover .atlas-pin-text, .atlas-pin.is-sel .atlas-pin-text { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
+.atlas-pin.is-in { color: var(--atlas-hot); }
+.atlas-pin:focus-visible { outline: none; }
+.atlas-pin:focus-visible .atlas-pin-text { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* 취향별 추천: 버튼 아래 목록. 축제는 다홍 점, 관광지는 잉크 점 */
+.atlas-recs { margin-top: 22px; }
+.atlas-recs-title { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 8px; }
+.atlas-recs-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.atlas-recs-list li { animation: recIn 0.5s var(--ease) both; animation-delay: calc(var(--i) * 55ms); }
+@keyframes recIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.atlas-rec {
+  display: grid; grid-template-columns: 12px auto; column-gap: 8px; align-items: baseline; text-align: left;
+  font: inherit; color: var(--ink); background: none; border: 0; padding: 7px 8px 7px 0; cursor: pointer;
+}
+.atlas-rec-mark { grid-row: 1 / span 2; align-self: center; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); }
+.atlas-rec.is-event .atlas-rec-mark { background: var(--atlas-ev); }
+.atlas-rec-name { font-size: 15px; font-weight: 600; }
+.atlas-rec-meta { grid-column: 2; font-size: 12px; font-weight: 500; color: var(--muted); margin-top: 2px; }
+.atlas-rec:hover .atlas-rec-name, .atlas-rec.is-sel .atlas-rec-name { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
+.atlas-rec.is-in .atlas-rec-name { color: var(--atlas-hot); }
+.atlas-rec:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+/* 추천을 고르면 그 줄이 제자리에서 펼쳐져 카드가 됨: 바탕 그라데이션이 차오르고 그림자가 겹겹이 깊어지며 종이에서 떠오름 */
+.atlas-recs { max-width: 340px; }
+.atlas-recs-empty { font-size: 13px; line-height: 1.6; color: var(--muted); max-width: 26ch; animation: recIn 0.5s var(--ease) both; }
+.atlas-rec-item {
+  position: relative; margin: 0 -14px; padding: 0 14px; border-radius: 14px; isolation: isolate;
+  transition: translate 0.5s var(--ease), box-shadow 0.6s var(--ease) 0.06s; /* 등장 애니메이션이 transform을 잡고 있어 translate로 띄움 */
+}
+.atlas-rec-item::before { /* 위는 흰빛, 아래로 갈수록 연보라. 펼쳐질 때 아래에서 위로 차오름 */
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+  background: linear-gradient(170deg, #FFFFFF 0%, #F7F4FB 46%, #EDE7F6 100%);
+  opacity: 0; clip-path: inset(100% 0 0 0 round 14px);
+  transition: opacity 0.4s var(--ease), clip-path 0.55s var(--ease);
+}
+.atlas-rec-item.is-open { translate: 0 -3px; box-shadow: 0 1px 2px rgba(42, 38, 92, 0.08), 0 8px 16px -8px rgba(42, 38, 92, 0.22), 0 26px 44px -22px rgba(42, 38, 92, 0.42); }
+.atlas-rec-item.is-open::before { opacity: 1; clip-path: inset(0 0 0 0 round 14px); }
+.atlas-rec-item.is-open .atlas-rec { padding-top: 14px; }
+.atlas-rec-item.is-open .atlas-rec-name { font-size: 18px; text-decoration: none; }
+.atlas-rec-name { transition: font-size 0.4s var(--ease); }
+.atlas-rec { transition: padding 0.4s var(--ease); width: 100%; }
+.atlas-rec-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.5s var(--ease); }
+.atlas-rec-item.is-open .atlas-rec-body { grid-template-rows: 1fr; }
+.atlas-rec-inner { overflow: hidden; padding-left: 20px; opacity: 0; transform: translateY(-4px); transition: opacity 0.35s var(--ease), transform 0.45s var(--ease); }
+.atlas-rec-item.is-open .atlas-rec-inner { opacity: 1; transform: none; transition-delay: 0.12s; }
+.atlas-rec-line { margin-top: 6px; font-size: 14px; line-height: 1.6; color: var(--ink); }
+.atlas-rec-trip { margin-top: 6px; font-size: 12px; color: var(--muted); }
+.atlas-rec-add {
+  margin: 14px 0 16px; height: 38px; padding: 0 18px; border: 0; border-radius: 8px; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 700; color: #fff; background: var(--ink);
+  box-shadow: 0 8px 16px -10px rgba(14, 47, 71, 0.7); transition: background-color 0.3s var(--ease), transform 0.15s var(--ease);
+}
+.atlas-rec-add:hover { background: #17486B; }
+.atlas-rec-add:active { transform: translateY(1px); }
+.atlas-rec-add.is-in { background: rgba(14, 47, 71, 0.08); color: var(--ink); box-shadow: none; }
+.atlas-rec-add:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .atlas-rec-item, .atlas-rec-item::before, .atlas-rec-body, .atlas-rec-inner, .atlas-rec, .atlas-rec-name { transition: none; }
+}
+
+@media (max-width: 860px) {
+  .atlas-head { left: 16px; top: 84px; right: 16px; }
+  .atlas-crumb { position: static; translate: none; height: auto; order: -1; margin-bottom: 14px; font-size: 18px; } /* 좁은 화면: 헤더가 좁아 버튼 위로 내려옴 */
+  .atlas-crumb:empty { display: none; }
+  .atlas-recs-list li:nth-child(n + 4) { display: none; } /* 좁은 화면: 추천은 세 개만 */
+  .atlas-filter { height: 32px; padding: 0 10px; font-size: 13px; }
+  .atlas-filter::after { left: 10px; right: 10px; }
+  .atlas-place { left: 16px; right: 16px; width: auto; bottom: 64px; padding: 20px; }
+  .atlas-place-name { font-size: 24px; }
+  .atlas-lead-note { display: none; } /* 좁은 화면에서는 이름만 */
+  .atlas-lead-line { width: 28px; }
+  .atlas-lead--peak { display: none; }
+}
+/* 지도 화면에서는 메뉴와 버튼도 종이 위 잉크색. 하늘색 덮개는 걷음 */
+.is-atlas .nav::before { opacity: 0; }
+.is-atlas .logo img { filter: brightness(0) saturate(100%) invert(14%) sepia(31%) saturate(1600%) hue-rotate(176deg) brightness(92%); } /* 잉크색 로고 */
+.is-atlas .mode-opt { color: rgba(14, 47, 71, 0.45); }
+.is-atlas .mode-opt:hover:not(.is-on) { color: rgba(14, 47, 71, 0.75); }
+.is-atlas .mode-opt.is-on { color: var(--ink); }
+.is-atlas .view-btn { color: var(--ink); text-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  .atlas-ui, .atlas-place, .atlas-label, .atlas-veil { transition: none; }
+}
+
+/* 밤의 지도: 남색 종이 위 밝은 글자. 선택 버튼은 밝은 판, 카드는 남색 그라데이션 */
+body.atlas-night { --ink: #E6E9FF; --muted: #9AA2D4; }
+.atlas-night .atlas-veil { background: #141734; }
+.atlas-night.is-atlas .logo img { filter: brightness(0) invert(1); }
+.atlas-night.is-atlas .mode-opt { color: rgba(230, 233, 255, 0.45); }
+.atlas-night.is-atlas .mode-opt.is-on { color: #E6E9FF; }
+.atlas-night .dial-pointer { background: #141734; }
+.atlas-night .atlas-rec-item::before { background: #0E112A; } /* 밤: 그라데이션 없이 한 색 */
+.atlas-night .atlas-rec-item.is-open { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 16px -8px rgba(0, 0, 0, 0.5), 0 26px 44px -22px rgba(0, 0, 0, 0.7); }
+.atlas-night .atlas-rec-add, .atlas-night .atlas-place-add { background: #E6E9FF; color: #0E112A; }
+.atlas-night .atlas-rec-add.is-in, .atlas-night .atlas-place-add.is-in { background: rgba(230, 233, 255, 0.12); color: #E6E9FF; }
+.atlas-night .atlas-rec-mark { background: #8FD3FF; }
+.atlas-night .atlas-pin-text, .atlas-night .atlas-label--place { text-shadow: 0 0 6px #141734, 0 0 2px #141734; }
+.atlas-night .atlas-pin-dot { box-shadow: 0 0 0 2px rgba(20, 23, 52, 0.9); }
+.atlas-night .atlas-lead { --label-halo: #141734; }
+.atlas-night .atlas-place { background: #222541; }
+
+/* 장소 이름: 점·선 위의 별도 층 */
+.atlas-tags { position: absolute; inset: 0; pointer-events: none; }
+.atlas-pin-tag {
+  position: absolute; left: 0; top: 0; translate: -50% -100%; white-space: nowrap;
+  font: inherit; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; color: var(--ink);
+  background: none; border: 0; padding: 2px 4px; cursor: pointer; opacity: 0; pointer-events: none;
+  text-shadow: 0 0 6px #EFEBF2, 0 0 3px #EFEBF2, 0 0 1px #EFEBF2; transition: opacity 0.35s var(--ease);
+}
+.atlas-pin-tag.is-on { opacity: 1; pointer-events: auto; }
+.atlas-pin-tag:hover, .atlas-pin-tag.is-sel { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
+.atlas-pin-tag.is-in { color: var(--atlas-hot); }
+.atlas-pin-tag:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.atlas-night .atlas-pin-tag { text-shadow: 0 0 6px #141734, 0 0 3px #141734, 0 0 1px #141734; }
+/* 추천 목록: 일곱 줄 남짓만 보이고 아래는 흐려지며, 스크롤로 나머지 확인 */
+.atlas-recs-list {
+  max-height: 468px; overflow-y: auto; overscroll-behavior: contain; /* 수도권 기준 익선동 한옥거리까지 또렷하게 */
+  margin: -6px -18px 0; padding: 6px 18px 40px; /* 펼친 카드의 그림자가 잘리지 않을 여백 */
+  -webkit-mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 60px), transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 60px), transparent 100%);
+}
+/* 스크롤바: 화살표 없는 얇은 막대 하나 */
+.atlas-recs-list::-webkit-scrollbar { width: 3px; }
+.atlas-recs-list::-webkit-scrollbar-track { background: transparent; }
+.atlas-recs-list::-webkit-scrollbar-thumb { background: rgba(14, 47, 71, 0.22); border-radius: 3px; }
+.atlas-recs-list::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+@supports not selector(::-webkit-scrollbar) { .atlas-recs-list { scrollbar-width: thin; scrollbar-color: rgba(14, 47, 71, 0.22) transparent; } }
+.atlas-recs-list.is-end { -webkit-mask-image: none; mask-image: none; } /* 끝까지 내리면 흐림 없앰 */
+.atlas-night .atlas-recs-list::-webkit-scrollbar-thumb { background: rgba(230, 233, 255, 0.24); }
+
+/* 지도 화면의 강조색: 낮에는 하늘색, 밤에는 오렌지 (축제 점, 코스에 담긴 장소) */
+body { --atlas-hot: #1478D6; --atlas-ev: #2A9BEA; }
+body.atlas-night { --atlas-hot: #FF6B57; --atlas-ev: #FF8574; }
+
+/* 노트북 화면: 머리글과 지도 판을 화면 너비에 맞춰 줄임 (--ui는 course.js fitUI. 1920 이상 1, 가장 작게 0.8) */
+.nav, .view-btn, .atlas-head, .atlas-place { zoom: var(--ui, 1); }
+.atlas-lead--region.is-soon { opacity: 0.55; } /* 세계 지도: 아직 코스를 짤 수 없는 지역 */
+.atlas-toast { position: fixed; left: 50%; bottom: 48px; z-index: 30; translate: -50% 12px; padding: 12px 18px; border-radius: 14px; background: rgba(14, 47, 71, 0.92); color: #fff; font-size: 14px; font-weight: 600;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s var(--ease), translate 0.5s var(--ease); }
+.atlas-toast.is-on { opacity: 1; translate: -50% 0; }
+
+/* 해외 지도를 처음 펼칠 때 덮개 위 안내 (scene.js veilMsg) */
+.atlas-veil-msg { position: absolute; left: 50%; top: 50%; translate: -50% -50%; display: flex; flex-direction: column; align-items: center; gap: 14px; color: var(--ink, #0E2F47); text-align: center;
+  opacity: 0; transition: opacity 0.35s ease; }
+.atlas-veil-msg.is-on { opacity: 1; }
+.atlas-veil-msg p { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.atlas-veil-msg small { font-size: 13px; color: #4E6C80; }
+.atlas-veil-bar { display: block; width: 180px; height: 4px; border-radius: 2px; background: rgb(14 47 71 / 0.1); overflow: hidden; }
+.atlas-veil-bar i { display: block; height: 100%; border-radius: 2px; background: #1478D6; transform-origin: left; transform: scaleX(0.04); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+.atlas-veil-msg.is-err .atlas-veil-bar, .atlas-veil-msg.is-err small { display: none; }
+.atlas-veil-msg.is-err p { max-width: 360px; line-height: 1.5; }
+body.atlas-night .atlas-veil-msg { color: #E6E9FF; }
+
+/* 3D 탐색 지도: 장소 설명 카드는 고른 장소 핀 옆에 (atlas.js placePanel이 자리를 잡음). 왼쪽 목록은 고른 줄만 강조 */
+.atlas-place { left: 0; top: 0; bottom: auto; width: 360px; padding: 22px 22px 20px; transform-origin: 0 30%; scale: 0.96;
+  transition: opacity 0.3s var(--ease), scale 0.55s var(--spring-soft, var(--ease)), visibility 0s linear 0.4s; }
+.atlas-place.is-left { transform-origin: 100% 30%; }
+.atlas-place.is-open { scale: 1; transition-delay: 0s; }
+.atlas-place-name { font-size: 24px; }
+.atlas-rec-item.is-pick .atlas-rec { background: rgb(20 120 214 / 0.08); border-radius: 12px; }
+.atlas-rec-item.is-pick .atlas-rec-name { color: #1478D6; font-weight: 700; }
+.atlas-night .atlas-rec-item.is-pick .atlas-rec { background: rgb(255 107 87 / 0.14); }
+.atlas-night .atlas-rec-item.is-pick .atlas-rec-name { color: #FF6B57; }
+@media (max-width: 860px) { .atlas-place { top: auto; bottom: 64px; left: 16px; right: 16px; width: auto; } }
+@media (prefers-reduced-motion: reduce) { .atlas-place { scale: 1; transition: opacity 0.2s, visibility 0s linear 0.2s; } }

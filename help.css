@@ -1,0 +1,84 @@
+/* PC 웹 설명: 오른쪽 아래 작은 블러 원(?)을 누르면 화면 전체에 강한 블러가 깔리고 설명이 떠오름
+   모바일·워치 시안의 오른쪽 설명 칸과 같은 짜임 (앱 설명, 화면 버튼, 화면 설명과 가는 법) */
+.help-fab, .help { --h-ease: cubic-bezier(0.22, 1, 0.36, 1); --h-spring: cubic-bezier(0.34, 1.56, 0.64, 1); --h-soft: cubic-bezier(0.22, 1.2, 0.36, 1); font-family: SUIT, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
+@supports (transition-timing-function: linear(0, 1)) {
+  .help-fab, .help { --h-spring: linear(0, 0.08 4%, 0.32 9%, 0.74 17%, 0.98 24%, 1.08 30%, 1.1 35%, 1.07 42%, 1.02 52%, 0.995 64%, 1);
+    --h-soft: linear(0, 0.1 4%, 0.38 10%, 0.78 20%, 0.97 29%, 1.025 37%, 1.03 44%, 1.01 58%, 1); }
+}
+
+/* 작은 블러 원 */
+.help-fab { position: fixed; right: 24px; bottom: 24px; z-index: 200; width: 44px; height: 44px; border: 0; padding: 0; border-radius: 50%; cursor: pointer;
+  display: grid; place-items: center; color: #0B2A44; background: rgb(255 255 255 / 0.28);
+  backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: 0 6px 20px rgb(11 42 68 / 0.14), inset 0 0.5px 0 rgb(255 255 255 / 0.6);
+  transition: scale 0.45s var(--h-spring), background-color 0.25s var(--h-ease), opacity 0.25s var(--h-ease); }
+.help-fab svg { width: 20px; height: 20px; }
+.help-fab:hover { background: rgb(255 255 255 / 0.42); scale: 1.06; }
+.help-fab:active { scale: 0.92; transition: scale 0.1s var(--h-ease); }
+.help-fab:focus-visible { outline: 2px solid #1478D6; outline-offset: 3px; }
+/* 밤과 블루 아워: 어두운 하늘에 묻히지 않게 밝은 아이콘 */
+:is(body[data-tod="night"], body[data-tod="dusk"]) .help-fab { color: #EAF7FF; background: rgb(255 255 255 / 0.14); box-shadow: 0 6px 20px rgb(0 0 0 / 0.3), inset 0 0.5px 0 rgb(255 255 255 / 0.3); }
+:is(body[data-tod="night"], body[data-tod="dusk"]) .help-fab:hover { background: rgb(255 255 255 / 0.24); }
+body.is-help .help-fab { opacity: 0; pointer-events: none; scale: 0.8; }
+
+/* 강한 블러와 설명 */
+.help { position: fixed; inset: 0; z-index: 201; display: grid; place-items: center; padding: 48px 40px; overflow-y: auto; color: #0B2A44;
+  background: rgb(228 236 244 / 0.46); backdrop-filter: blur(36px) saturate(1.25); -webkit-backdrop-filter: blur(36px) saturate(1.25);
+  opacity: 0; visibility: hidden; transition: opacity 0.32s var(--h-ease), visibility 0s linear 0.32s; }
+.help.is-on { opacity: 1; visibility: visible; transition: opacity 0.4s var(--h-ease); }
+.help-in { width: min(1040px, 100%); display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: start; }
+.help-in > * { transform: translateY(18px) scale(0.985); opacity: 0; transition: transform 0.3s var(--h-ease), opacity 0.2s var(--h-ease); }
+.help.is-on .help-in > * { transform: none; opacity: 1; transition: transform 0.7s var(--h-soft), opacity 0.4s var(--h-ease); }
+.help.is-on .help-in > :nth-child(2) { transition-delay: 0.06s; }
+
+.help h2 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -0.02em; }
+.help-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; max-width: 44ch; }
+/* 낮·노을·밤 토글: 흰 알약 안에서 표시가 튕기며 옮겨 가고, 시간대 색으로 바뀜 */
+.help-tod { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; border-radius: 999px; background: rgb(255 255 255 / 0.78); box-shadow: 0 4px 14px rgb(11 42 68 / 0.06); }
+.help-tod i { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc((100% - 8px) / 3); border-radius: 999px; background: #1478D6; transition: translate 0.5s var(--h-soft), background-color 0.3s var(--h-ease); }
+.help-tod[data-on="sunset"] i { translate: 100% 0; background: #F08A5D; }
+.help-tod[data-on="night"] i { translate: 200% 0; background: #222541; }
+.help-tod button { position: relative; z-index: 1; width: 54px; height: 34px; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 600; color: #33506A; cursor: pointer; transition: color 0.25s var(--h-ease); }
+.help-tod button[aria-pressed="true"] { color: #FFFFFF; }
+.help-tod button:focus-visible { outline: 2px solid #1478D6; outline-offset: 2px; border-radius: 999px; }
+.help-lead { margin: 0 0 22px; font-size: 17px; line-height: 1.6; color: #33506A; max-width: 44ch; }
+.help-acts { display: flex; flex-direction: column; gap: 14px; }
+.help-group { display: grid; grid-template-columns: 76px 1fr; gap: 12px; align-items: start; }
+.help-group > span { font-size: 15px; font-weight: 500; color: #6A8196; line-height: 42px; }
+.help-group > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.help-acts button { padding: 11px 17px; border: 0; border-radius: 999px; background: rgb(255 255 255 / 0.78); font: inherit; font-size: 15px; font-weight: 600; color: #0B2A44; cursor: pointer;
+  box-shadow: 0 4px 14px rgb(11 42 68 / 0.06); transition: scale 0.42s var(--h-spring), background-color 0.2s var(--h-ease), color 0.2s var(--h-ease); }
+.help-acts button:hover { background: #FFFFFF; }
+.help-acts button:active { scale: 0.95; transition: scale 0.09s var(--h-ease); }
+.help-acts button.is-on { background: #1478D6; color: #FFFFFF; box-shadow: 0 6px 18px rgb(20 120 214 / 0.3); }
+.help-acts button:focus-visible, .help-links a:focus-visible, .help-x:focus-visible { outline: 2px solid #1478D6; outline-offset: 2px; }
+.help-links { display: flex; gap: 8px; align-items: center; margin-top: 26px; font-size: 15px; color: #6A8196; }
+.help-links a { padding: 8px 14px; border-radius: 999px; background: rgb(255 255 255 / 0.5); color: #0B2A44; font-weight: 600; text-decoration: none; transition: background-color 0.2s var(--h-ease); }
+.help-links a:hover { background: #FFFFFF; }
+
+.help-desc { padding: 26px 26px; border-radius: 28px; background: rgb(255 255 255 / 0.8); box-shadow: 0 18px 50px rgb(11 42 68 / 0.1); min-height: 236px; }
+.help-desc b { display: block; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 10px; }
+.help-desc > p { margin: 0; font-size: 16px; line-height: 1.65; color: #33506A; }
+/* 흐름: 지금 단계는 파란 알약, 지난 단계는 진하게, 다음 단계는 옅게 */
+.help-flow { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 18px 0 0; padding: 0; counter-reset: st; }
+.help-flow[hidden] { display: none; }
+.help-flow li { counter-increment: st; display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px 6px 6px; white-space: nowrap; border-radius: 999px; background: #EEF3F8; font-size: 15px; font-weight: 600; color: #6A8196; }
+.help-flow li::before { content: counter(st); width: 19px; height: 19px; border-radius: 50%; display: grid; place-items: center; font-size: 15px; background: #FFFFFF; color: #6A8196; }
+.help-flow li.is-done { color: #0B2A44; }
+.help-flow li.is-on { background: #1478D6; color: #FFFFFF; }
+.help-flow li.is-on::before { color: #1478D6; }
+.help-how { display: flex; gap: 12px; margin-top: 18px; font-size: 16px; line-height: 1.6; }
+.help-how em { flex: none; font-style: normal; font-weight: 600; color: #1478D6; }
+.help-desc.is-in { animation: help-in 0.5s var(--h-soft) both; }
+@keyframes help-in { from { opacity: 0; transform: translateY(10px); } }
+
+.help-close { position: fixed; right: 24px; top: 24px; display: flex; align-items: center; gap: 10px; }
+.help-close span { font-size: 15px; font-weight: 500; color: #33506A; }
+.help-x { width: 44px; height: 44px; border: 0; border-radius: 50%; cursor: pointer; display: grid; place-items: center; color: #0B2A44;
+  background: rgb(255 255 255 / 0.6); transition: scale 0.42s var(--h-spring), background-color 0.2s var(--h-ease); }
+.help-x svg { width: 20px; height: 20px; }
+.help-x:hover { background: #FFFFFF; }
+.help-x:active { scale: 0.92; }
+
+@media (max-width: 860px) { .help-in { grid-template-columns: 1fr; gap: 24px; } .help { place-items: start center; } }
+@media (prefers-reduced-motion: reduce) { .help, .help *, .help-fab { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }

@@ -1,0 +1,9 @@
+{
+  "name": "eodi",
+  "short_name": "eodi",
+  "lang": "ko",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#1A81BD",
+  "theme_color": "#1A81BD"
+}

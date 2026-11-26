@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>eodi</title>
+  <link rel="stylesheet" href="fonts.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="course.css">
+  <link rel="stylesheet" href="companion.css">
+  <link rel="stylesheet" href="help.css?v=20261124e">
+</head>
+<body>
+  <header class="nav" aria-label="주요 메뉴">
+    <a class="logo" href="#" aria-label="eodi 홈"><img src="logo-eodi.svg" alt="eodi" width="64" height="26"></a>
+    <div class="mode" role="radiogroup" aria-label="여행 범위">
+      <button class="mode-opt is-on" role="radio" aria-checked="true" data-mode="domestic">국내</button>
+      <span class="dial" aria-hidden="true"><span class="dial-pointer"></span></span>
+      <button class="mode-opt" role="radio" aria-checked="false" data-mode="overseas">해외</button>
+    </div>
+  </header>
+
+  <main id="stage" aria-label="KTX 역에 열차가 들어오는 장면"></main>
+  <button id="enter-pov" class="view-btn view-btn--enter">승강장으로 이동</button>
+  <button id="leave-pov" class="view-btn view-btn--leave">역 전체 보기</button>
+
+  <!-- 입체 지도 (좌석에서 종이 지도를 누르면) -->
+  <section id="atlas-ui" class="atlas-ui" aria-label="국내 여행 지도" hidden>
+    <div class="atlas-head">
+      <h2 id="atlas-crumb" class="atlas-crumb">전국</h2>
+      <p id="atlas-sub" class="atlas-sub"></p>
+      <div id="atlas-filters" class="atlas-filters" role="radiogroup" aria-label="여행 취향"></div>
+      <section id="atlas-recs" class="atlas-recs" aria-live="polite"><p id="atlas-recs-title" class="atlas-recs-title"></p><ol id="atlas-recs-list" class="atlas-recs-list"></ol></section>
+    </div>
+    <div id="atlas-labels" class="atlas-labels"></div>
+    <aside id="atlas-place" class="atlas-place" aria-hidden="true" aria-live="polite">
+      <button id="atlas-place-close" class="atlas-place-close" type="button">닫기</button>
+      <p id="atlas-place-region" class="atlas-place-region"></p>
+      <h3 id="atlas-place-name" class="atlas-place-name"></h3>
+      <p id="atlas-place-line" class="atlas-place-line"></p>
+      <p id="atlas-place-meta" class="atlas-place-meta"></p>
+      <button id="atlas-place-add" class="atlas-place-add" type="button">코스에 담기</button>
+    </aside>
+  </section>
+  <div id="atlas-veil" class="atlas-veil" aria-hidden="true"></div>
+
+  <script src="vendor/three.min.js"></script>
+  <script src="scene-spec.js"></script>
+  <script>window.EODI_LITE = true; // 히어로에서는 가벼운 모델 텍스처</script>
+  <script src="models/models.js"></script>
+  <script src="posters.js"></script>
+  <script src="mapdata.js"></script>
+  <script src="props.js"></script>
+  <script src="heightdata.js"></script>
+  <script src="objects.js"></script>
+  <script src="dream.js"></script>
+  <script src="atlas.js"></script>
+  <script src="course-data.js"></script>
+  <script src="world-spec.js"></script>
+  <script src="japan-spec.js"></script>
+  <script src="course-data-jp.js"></script>
+  <script src="assets/course/busan-pois.js"></script>
+  <script src="course.js"></script>
+  <script src="companion-data.js"></script>
+  <script src="companion.js"></script>
+  <script src="scene.js?v=20261124b"></script>
+  <script src="help.js?v=20261124e"></script>
+</body>
+</html>

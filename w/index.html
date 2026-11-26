@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#DCE4EC">
+  <title>eodi 워치</title>
+  <link rel="stylesheet" href="../fonts.css">
+  <link rel="stylesheet" href="w.css?v=20261124f">
+</head>
+<body>
+  <main class="stage">
+    <!-- 애플 워치 46mm 목업: 알루미늄 몸체, 디지털 크라운, 측면 버튼, 스포츠 밴드 (CSS로 그림) -->
+    <div class="device" id="device"><div class="rig">
+      <div class="band band-top" aria-hidden="true"></div>
+      <div class="band band-bottom" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="case">
+        <button class="crown" id="crown" aria-label="디지털 크라운: 누르면 시계 화면, 돌리면 확대와 스크롤"><i></i></button>
+        <button class="side" id="side" aria-label="측면 버튼: 다음 장소 지도"></button>
+        <i class="mic" aria-hidden="true"></i><i class="spk" style="top:112px" aria-hidden="true"></i><i class="spk" style="top:150px" aria-hidden="true"></i>
+        <div class="glass">
+          <div class="screen" id="screen" role="application" aria-label="eodi 워치 화면">
+            <section class="view v-face" data-view="face"></section>
+            <section class="view v-map" data-view="map"></section>
+            <section class="view v-near" data-view="near"></section>
+            <section class="view v-place" data-view="place"></section>
+            <section class="view v-done" data-view="done"></section>
+            <section class="note" id="note" aria-live="polite"></section>
+          </div>
+          <i class="glare" aria-hidden="true"></i>
+        </div>
+      </div>
+    </div></div>
+
+    <aside class="panel">
+      <h1>eodi 워치</h1>
+      <p class="lead">여행 중 걷는 동안 손목으로 다음 장소까지 길을 보고, 근처에 가볼 곳을 찾아 바로 코스에 넣는 앱이에요. 코스를 짜고 고치는 일은 폰에서 하고, 워치는 걸으면서 보고 고르는 일만 해요.</p>
+      <div class="acts" aria-label="화면 설명 보기">
+        <button data-demo="map">다음 장소 지도</button>
+        <button data-demo="near">근처에 가볼 곳</button>
+        <button data-demo="place">장소 보기</button>
+        <button data-demo="depart">출발 알림</button>
+        <button data-demo="vote">동행 제안</button>
+        <button data-demo="face">시계 화면 위젯</button>
+      </div>
+      <div class="desc" id="desc" aria-live="polite"><b></b><p></p><div class="how"><em>가는 법</em><span></span></div></div>
+      <p class="hint">숫자 키 5는 출발 알림, 6은 동행 제안을 바로 열어요.</p>
+    </aside>
+  </main>
+  <script src="map.js?v=20261124f"></script>
+  <script src="w.js?v=20261124f"></script>
+</body>
+</html>
