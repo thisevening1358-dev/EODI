@@ -1341,6 +1341,8 @@
     const first = ray.intersectObjects([cur.mover, ...cur.hits, interior], true).find((h) => h.object.isMesh && visibleUp(h.object));
     if (!first) return false;
     for (let o = first.object; o; o = o.parent) if (o === cur.mover) return true;
+    // 공항 터미널: 탑승구(문, 위 표지, 이어진 탑승교)를 눌러도 비행기 좌석으로
+    if (cur === worlds.overseas) { const p = first.point; if (p.z > 3.9 && p.z < 6.1 && p.x > -10.6 && p.x < -1.5 && p.y > 1.2 && p.y < 4.6) return true; }
     return false;
   }
   // ---------- 좌석 직행: 전체 화면에서 열차나 비행기를 누르면 승강장 시점을 거치지 않고 곧바로 좌석까지 ----------
