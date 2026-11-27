@@ -1908,17 +1908,24 @@
   camera.lookAt(target);
   setWorld(startMode);
   apply(0);
-  { // 셰이더를 두 장면 모두 미리 준비해서 첫 장면과 전환에서 멈칫하지 않게
-    const warm = [gD, gO, interior, train, plane, worlds.domestic.cabin.group, worlds.overseas.cabin.group];
-    const keep = warm.map((o) => o.visible);
-    warm.forEach((o) => { o.visible = true; });
+  // 첫 애니메이션 전에 셰이더와 텍스처를 모두 미리 준비: 처음 켤 때 솟는 장면 도중에 멈칫하지 않게
+  // 시작 순간에는 역·레일·열차가 화면 밖(땅 아래)이라 한 번 그리기만으로는 빠지므로, 숨은 것까지 모두 켜고 compile로 준비함 (화면 밖도 포함)
+  function warmUp() {
+    const hidden = []; scene.traverse((o) => { if (!o.visible) { hidden.push(o); o.visible = true; } });
+    renderer.compile(scene, camera); renderer.compile(scene, povCam);
+    const seen = new Set(), up = (x) => { if (x && x.isTexture && !seen.has(x)) { seen.add(x); renderer.initTexture(x); } }; // 그림을 그래픽 메모리로 미리 올림
+    scene.traverse((o) => { for (const m of [].concat(o.material || [])) { for (const k in m) up(m[k]); if (m.uniforms) for (const u of Object.values(m.uniforms)) up(u && u.value); } });
     renderer.shadowMap.needsUpdate = true;
-    renderer.setRenderTarget(rtScene); renderer.render(scene, camera); renderer.setRenderTarget(null); // 잘라내기가 들어간 셰이더와 텍스처까지 미리 준비
+    renderer.setRenderTarget(rtScene); renderer.render(scene, camera); renderer.setRenderTarget(null); // 잘라내기가 들어간 셰이더와 그림자까지
     shadowDirty = true;
-    warm.forEach((o, i) => { o.visible = keep[i]; });
+    for (const o of hidden) o.visible = false;
+    renderScene(camera); composite(performance.now(), true); // 번짐·하늘·필름 합성 단계도 한 번 돌려서 준비
   }
-  start = performance.now();
-  requestAnimationFrame(frame);
+  // 글꼴이 준비되면 전광판 포스터와 손에 든 지도·휴대폰 그림이 그려짐: 그 뒤에 미리 준비하고 애니메이션을 시작해서
+  // 큰 그림 그리기와 업로드가 솟는 장면 도중에 몰리지 않게 (글꼴이 늦으면 1.5초까지만 기다림)
+  Promise.race([window.EODI_POSTERS.ready(), new Promise((r) => setTimeout(r, 1500))])
+    .then(() => new Promise((r) => setTimeout(r, 0))) // 같은 때 끝난 그림 그리기 콜백이 먼저 돌도록
+    .then(() => { warmUp(); start = performance.now(); requestAnimationFrame(frame); });
   companion = window.EODI_COMPANION ? window.EODI_COMPANION({ reduce, phoneRect,
     onClose: () => { cur.cabin.phone.visible = true; refreshPhones(); dirty = true; if (courseUI && courseUI.refresh) courseUI.refresh(); }, // 앱에서 바뀐 할 일이 3D 휴대폰 화면에도
     onApply: (tripId, m, w) => { // 투표로 정한 곳을 코스에: 코스 화면이 있으면 그 목록에, 해외 코스 화면이 아직 없으면 원본 데이터에
