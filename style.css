@@ -40,6 +40,7 @@ body::before {
   will-change: transform;
   animation: drift 48s ease-in-out infinite alternate;
 }
+body.is-ready::before { animation: none; visibility: hidden; } /* 장면이 화면을 다 덮으면 보이지 않는데 계속 그려지던 층 */
 @keyframes drift {
   from { transform: translate3d(-2.5%, 0, 0); }
   to { transform: translate3d(2.5%, -1.2%, 0); }

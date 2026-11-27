@@ -21,7 +21,7 @@
   // ---------- renderer / scene / camera ----------
   const host = document.getElementById('stage');
   const params = new URLSearchParams(location.search);
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+  const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: 'high-performance' }); // 장면은 rtScene에 그리고 캔버스에는 필름 합성 한 장만 올라가서 캔버스 MSAA는 필요 없음
   const Q = [ // 품질 단계: 기기가 버거워하면 아래 단계로 내려감
     { dpr: Math.min(window.devicePixelRatio, LK.maxDpr), shadow: 1024 }, // 그림자 해상도 1024: 필름 번짐이 가장자리를 덮어 차이가 거의 안 보임
     { dpr: Math.min(window.devicePixelRatio, 1), shadow: 1024 },
@@ -921,10 +921,11 @@
   }
   function composite(now, changed) {
     const u = filmMat.uniforms;
-    const skyDue = now - skyAt > 100 || Math.abs((mode === 'overseas' ? 1 : 0) - skyMat.uniforms.uOver.value) > 0.002;
+    const skyGap = atlasOn && !atlasBusy ? Infinity : changed ? 100 : 200; // 구름은 아주 느리게 흘러서 멈춘 화면은 초당 5번이면 충분
+    const skyDue = now - skyAt > skyGap || Math.abs((mode === 'overseas' ? 1 : 0) - skyMat.uniforms.uOver.value) > 0.002;
     if (!changed && !skyDue) return; // 바뀐 것이 없으면 화면을 그대로 둠
     const su = skyMat.uniforms, over = mode === 'overseas' ? 1 : 0;
-    if (now - skyAt > 100 || Math.abs(over - su.uOver.value) > 0.002) { // 하늘은 초당 10번 정도만
+    if (now - skyAt > skyGap || Math.abs(over - su.uOver.value) > 0.002) { // 하늘은 움직일 때 초당 10번, 멈췄을 때 5번
       skyAt = now; su.uTime.value = reduce ? 0 : now / 1000; su.uOver.value += (over - su.uOver.value) * 0.12;
       renderer.setRenderTarget(rtSky); renderer.render(skyScene, quadCam);
     }
@@ -1102,10 +1103,13 @@
   // 역을 누르면 승강장으로, 버튼이나 Esc로 돌아감
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   let settledAt = 0;
+  const moverBox = new THREE.Box3();
+  const onMoverBox = () => moverBox.setFromObject(cur.mover).expandByScalar(0.3) && ray.ray.intersectsBox(moverBox); // 상자 판정은 가벼움
   function hitOverviewMover(e) {
     if (viewTarget !== 0 || viewAnim || sw || settledAt < 1 || seatTarget !== 0 || seatAnim || seatP > 0) return false;
     ndc.set((e.clientX / host.clientWidth) * 2 - 1, -(e.clientY / host.clientHeight) * 2 + 1);
     ray.setFromCamera(ndc, camera);
+    if (!onMoverBox()) return false;
     const first = ray.intersectObjects([cur.mover, ...cur.hits], true).find((h) => h.object.isMesh && visibleUp(h.object));
     if (!first) return false;
     for (let o = first.object; o; o = o.parent) if (o === cur.mover) return true;
@@ -1338,6 +1342,7 @@
     if (viewP < 1 || viewAnim || seatTarget !== 0 || seatAnim || sw) return false;
     ndc.set((e.clientX / host.clientWidth) * 2 - 1, -(e.clientY / host.clientHeight) * 2 + 1);
     ray.setFromCamera(ndc, povCam);
+    if (cur !== worlds.overseas && !onMoverBox()) return false; // 공항은 탑승구도 봐야 해서 상자로 거르지 않음
     const first = ray.intersectObjects([cur.mover, ...cur.hits, interior], true).find((h) => h.object.isMesh && visibleUp(h.object));
     if (!first) return false;
     for (let o = first.object; o; o = o.parent) if (o === cur.mover) return true;
@@ -1794,7 +1799,7 @@
     shadowDirty = true; dirty = true; emaDt = 16.7;
   }
   const FRAME_MS = 1000 / LK.fps;
-  let lastFrame = 0, shTick = 0;
+  let lastFrame = 0, shTick = 0, hoverAt = 0;
   function frame(now) {
     requestAnimationFrame(frame);
     if (now - lastFrame < FRAME_MS - 2) return; // 초당 LK.fps번까지만 (필름 느낌과 맞고 그래픽 부담이 절반)
@@ -1802,7 +1807,8 @@
     lastFrame = now;
     adapt(now);
     if (!timeParam && now - todAt > 60000) { todAt = now; if (todAt > 1) applyTod(); } // 1분에 한 번 실제 시각을 반영
-    if (hoverEv) {
+    if (hoverEv && now - hoverAt > 90) {
+      hoverAt = now;
       if (atlasOn) { if (!atlasBusy) host.style.cursor = courseUI && courseUI.ownsMap() ? '' : atlas.hover(hoverEv) ? 'pointer' : ''; }
       else {
         moverHot = !atlasBusy && (hitOverviewMover(hoverEv) || hitMover(hoverEv));

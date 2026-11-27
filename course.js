@@ -560,6 +560,7 @@
       return spec;
     }
     const bow = (a, b, k = 0.16) => { const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1]; return `M${a[0].toFixed(1)} ${a[1].toFixed(1)}Q${(mx - dy * k).toFixed(1)} ${(my + dx * k).toFixed(1)} ${b[0].toFixed(1)} ${b[1].toFixed(1)}`; };
+    let natKey = '';
     function natPos() {
       if (!natSpec || !S.on || CITY_VIEWS.includes(S.view) || S.view === 'explore') return;
       const P = {};
@@ -569,10 +570,13 @@
           const q = (u, v, w) => (1 - t) * (1 - t) * u + 2 * t * (1 - t) * v + t * t * w;
           P[k] = [q(A0[0], cx, B0[0]), q(A0[1], cy, B0[1]), true]; }
         else { const c = CITY[k]; P[k] = c ? AT().projectLL(c.lat, c.lon, 0.05) : [0, 0, false]; } } return P[k]; };
-      natSpec.segs.forEach((s, i) => { const a = at(s.a), b = at(s.b), d = bow(a, b, s.cls.includes('back') ? -0.12 : 0.16);
-        const p = natLines.children[i]; if (p) p.setAttribute('d', d);
+      const lx = left.classList.contains('is-on') ? left.getBoundingClientRect().right + 24 : 0; // 왼쪽 칸에 덮이는 비행 칩은 숨김 (쓰기 전에 먼저 읽음)
+      const ds = natSpec.segs.map((s) => bow(at(s.a), at(s.b), s.cls.includes('back') ? -0.12 : 0.16));
+      const key = lx.toFixed(0) + '|' + ds.join('|') + '|' + [...natPins.children].map((el) => at(el.dataset.k).map((v) => (typeof v === 'number' ? v.toFixed(1) : v)).join(',')).join('|');
+      if (key === natKey) return; // 지도가 멈춰 있으면 매 프레임 같은 값을 다시 쓰지 않음
+      natKey = key;
+      ds.forEach((d, i) => { const p = natLines.children[i]; if (p) p.setAttribute('d', d);
         const g = natGlow.querySelector(`[data-i="${i}"]`); if (g) g.setAttribute('d', d); });
-      const lx = left.classList.contains('is-on') ? left.getBoundingClientRect().right + 24 : 0; // 왼쪽 칸에 덮이는 비행 칩은 숨김
       for (const el of natPins.children) { const p = at(el.dataset.k); el.style.transform = `translate(${p[0].toFixed(1)}px, ${p[1].toFixed(1)}px)`; el.style.visibility = p[2] && !(el.dataset.k.startsWith('mid:') && p[0] < lx + 90) ? '' : 'hidden'; }
     }
 

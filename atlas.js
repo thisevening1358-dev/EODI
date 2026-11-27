@@ -611,9 +611,10 @@
       }
       if (level === 'national') { // 지시선 길이: 같은 쪽 이름표가 땅 바깥 한 줄에 서도록
         const [lx] = project(edgeW, 0, edgeZ), [rx] = project(edgeE, 0, edgeZ);
+        for (const r of regions) if (content || !r.tw) r.tw = r.label.querySelector('.atlas-lead-text').offsetWidth; // 글자 폭은 내용이 바뀔 때만 잼 (매 프레임 재면 레이아웃을 반복 계산)
         for (const r of regions) {
           const [sx] = project(r.cx, 0, r.cz), line = r.label.querySelector('.atlas-lead-line');
-          const tw = r.label.querySelector('.atlas-lead-text').offsetWidth + 14, room = r.left ? sx - tw - 12 : host.clientWidth - sx - tw - 12; // 글자가 화면 밖으로 나가지 않게
+          const tw = r.tw + 14, room = r.left ? sx - tw - 12 : host.clientWidth - sx - tw - 12; // 글자가 화면 밖으로 나가지 않게
           line.style.width = Math.max(14, Math.min(room, r.left ? sx - lx + 28 : rx - sx + 28)).toFixed(0) + 'px';
         }
       }
@@ -631,8 +632,10 @@
         const [sx, sy, ok] = project(p.x, headY(p), p.z);
         if (!ok) { p.label.classList.remove('is-on'); continue; }
         p.label.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px)`;
-        if (named) full.push({ p, sx, sy, w: p.tag.offsetWidth || 80 });
+        if (named) full.push({ p, sx, sy, w: 0 });
       }
+      // 이름 폭: 모양(고름·담김)이 바뀔 때만 한 번에 잼. 쓰기 사이사이에 재면 이름마다 레이아웃을 다시 계산함
+      for (const L of full) { const key = (L.p.id === placeSel ? 's' : '') + (course.includes(L.p.id) ? 'c' : ''); if (L.p.tagKey !== key || !L.p.tagW) { L.p.tagKey = key; L.p.tagW = L.p.tag.offsetWidth || 80; } L.w = L.p.tagW; }
       full.sort((a, b) => b.sy - a.sy);
       const placed = [];
       for (const L of full) {
